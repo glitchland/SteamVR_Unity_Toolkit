@@ -19,18 +19,23 @@ public class SteamVR_InteractGrab : MonoBehaviour
 {
     public Rigidbody controllerAttachPoint = null;
     public bool hideControllerOnGrab = false;
+    public bool createRigidBodyWhenNotTouching = false;
 
     public event ObjectInteractEventHandler ControllerGrabInteractableObject;
     public event ObjectInteractEventHandler ControllerUngrabInteractableObject;
 
-    Joint controllerAttachJoint;
-    GameObject grabbedObject = null;
+    protected GameObject controllerRigidBody;
 
-    SteamVR_InteractTouch interactTouch;
-    SteamVR_TrackedObject trackedController;
-    SteamVR_ControllerActions controllerActions;
+    private Joint controllerAttachJoint;
+    private GameObject grabbedObject = null;
+
+    private SteamVR_InteractTouch interactTouch;
+    private SteamVR_TrackedObject trackedController;
+    private SteamVR_ControllerActions controllerActions;
 
     private int grabEnabledState = 0;
+
+    private Vector3 controllerRigidBodyPosition = new Vector3(0f, -0.04f, 0f);
 
     public virtual void OnControllerGrabInteractableObject(ObjectInteractEventArgs e)
     {
@@ -85,6 +90,39 @@ public class SteamVR_InteractGrab : MonoBehaviour
 
         GetComponent<SteamVR_ControllerEvents>().AliasGrabOn += new ControllerClickedEventHandler(DoGrabObject);
         GetComponent<SteamVR_ControllerEvents>().AliasGrabOff += new ControllerClickedEventHandler(DoReleaseObject);
+
+        CreateRigidBodyPoint();
+    }
+
+    private void CreateRigidBodyPoint()
+    {
+        controllerRigidBody = new GameObject(string.Format("[{0}]_RigidBody_Holder", this.gameObject.name));
+        controllerRigidBody.transform.parent = this.transform;
+
+        SphereCollider sc = controllerRigidBody.AddComponent<SphereCollider>();
+        Rigidbody rb = controllerRigidBody.AddComponent<Rigidbody>();
+
+        sc.radius = 0.35f;
+        sc.center = new Vector3(0f, 0f, 0f);
+
+        controllerRigidBody.transform.localPosition = controllerRigidBodyPosition;
+        controllerRigidBody.transform.localScale = new Vector3(0.15f, 0.15f, 0.15f);
+
+        rb.useGravity = false;
+        rb.mass = 100f;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        ToggleRigidBody(false);
+    }
+
+    private void Update()
+    {
+        controllerRigidBody.transform.localPosition = controllerRigidBodyPosition;
+    }
+
+    private void ToggleRigidBody(bool state)
+    {
+        state = (!createRigidBodyWhenNotTouching ? false : state);
+        controllerRigidBody.GetComponent<Rigidbody>().detectCollisions = state;
     }
 
     private bool IsObjectGrabbable(GameObject obj)
@@ -264,6 +302,9 @@ public class SteamVR_InteractGrab : MonoBehaviour
             {
                 grabEnabledState++;
             }
+        } else
+        {
+            ToggleRigidBody(true);
         }
     }
 
@@ -280,5 +321,6 @@ public class SteamVR_InteractGrab : MonoBehaviour
                 ReleaseObject(e.controllerIndex, true);
             }
         }
+        ToggleRigidBody(false);
     }
 }
