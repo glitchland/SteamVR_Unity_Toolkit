@@ -56,7 +56,13 @@ namespace VRTK
         public Transform rightSnapHandle;
         public Transform leftSnapHandle;
 
-        [Header("Grab Mechanics", order = 3)]
+        [Header("Grab Type (For animators)", order = 3)]
+        public bool grabLarge = false;
+        public bool grabSmall = false;
+        public bool grabStickUp = false;
+        public bool grabStickFront = false;
+
+        [Header("Grab Mechanics", order = 4)]
         public GrabAttachType grabAttachMechanic = GrabAttachType.Fixed_Joint;
         public float detachThreshold = 500f;
         public float springJointStrength = 500f;
@@ -64,7 +70,7 @@ namespace VRTK
         public float throwMultiplier = 1f;
         public float onGrabCollisionDelay = 0f;
 
-        [Header("Use Interactions", order = 4)]
+        [Header("Use Interactions", order = 5)]
         public bool isUsable = false;
         public bool holdButtonToUse = true;
         public bool pointerActivatesUseAction = false;

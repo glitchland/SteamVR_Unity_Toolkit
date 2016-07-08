@@ -19,6 +19,8 @@ namespace VRTK
     [RequireComponent(typeof(VRTK_InteractTouch)), RequireComponent(typeof(VRTK_ControllerEvents))]
     public class VRTK_InteractGrab : MonoBehaviour
     {
+        public bool hasAnimations;
+        private VRTK_ControllerAnimations animator;
         public Rigidbody controllerAttachPoint = null;
         public bool hideControllerOnGrab = false;
         public float hideControllerDelay = 0f;
@@ -92,6 +94,20 @@ namespace VRTK
             {
                 Debug.LogError("VRTK_InteractGrab is required to be attached to a SteamVR Controller that has the VRTK_ControllerEvents script attached to it");
                 return;
+            }
+
+            if (hasAnimations)
+            {
+                if (GetComponent<VRTK_ControllerEvents>() == null)
+                {
+                    Debug.LogError("VRTK_ControllerAnimations is required to be attached to this controller too if animations are enabled.");
+                    return;
+                }
+                animator = GetComponent<VRTK_ControllerAnimations>();
+                if (!animator)
+                {
+                    Debug.LogError("VRTK_ControllerAnimations could not be found!");
+                }
             }
 
             GetComponent<VRTK_ControllerEvents>().AliasGrabOn += new ControllerInteractionEventHandler(DoGrabObject);
@@ -221,6 +237,12 @@ namespace VRTK
 
         private Rigidbody ReleaseGrabbedObjectFromController(bool withThrow)
         {
+            // release the grab animation
+            if (animator)
+            {
+                animator.Idle();
+            }
+
             if (controllerAttachJoint != null)
             {
                 return ReleaseAttachedObjectFromController(withThrow);
@@ -422,10 +444,34 @@ namespace VRTK
 
                 if (grabbedObject && initialGrabAttempt)
                 {
-                    var rumbleAmount = grabbedObject.GetComponent<VRTK_InteractableObject>().rumbleOnGrab;
+                    VRTK_InteractableObject grabbedInteractableObject = grabbedObject.GetComponent<VRTK_InteractableObject>();
+                    var rumbleAmount = grabbedInteractableObject.rumbleOnGrab;
                     if (!rumbleAmount.Equals(Vector2.zero))
                     {
                         controllerActions.TriggerHapticPulse((ushort)rumbleAmount.y, rumbleAmount.x, 0.05f);
+                    }
+                    if(hasAnimations)
+                    {
+                        if (grabbedInteractableObject.grabLarge)
+                        {
+                            animator.GrabLarge();
+                        }
+                        else if (grabbedInteractableObject.grabSmall)
+                        {
+                            animator.GrabSmall();
+                        }
+                        else if (grabbedInteractableObject.grabStickUp)
+                        {
+                            animator.GrabStickUp();
+                        }
+                        else if (grabbedInteractableObject.grabStickFront)
+                        {
+                            animator.GrabStickFront();
+                        }
+                        else
+                        {
+                            animator.Grab();
+                        }
                     }
                 }
             }
